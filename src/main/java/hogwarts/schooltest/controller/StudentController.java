@@ -20,6 +20,16 @@ public class StudentController {
     @Autowired
     public AvatarService avatarService;
 
+    @GetMapping ("/info")
+    public ResponseEntity getInfoAboutAuthor() {
+        return ResponseEntity.ok("Author of this application is Good person!");
+    }
+
+    @GetMapping ("/all")
+    public ResponseEntity<Collection<Student>> getAllStudents() {
+        return ResponseEntity.ok(studentService.getAllStudents());
+    }
+
     @GetMapping("{id}")
     public ResponseEntity<Student> getStudentInfo(@PathVariable long id){
         Student student = studentService.findStudent(id);
