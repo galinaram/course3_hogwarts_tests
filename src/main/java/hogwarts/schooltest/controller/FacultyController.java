@@ -1,16 +1,24 @@
 package hogwarts.schooltest.controller;
 
 import hogwarts.schooltest.model.Faculty;
+import hogwarts.schooltest.model.Student;
 import hogwarts.schooltest.service.FacultyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
 
 @RestController
 @RequestMapping("faculty")
 public class FacultyController {
     @Autowired
     private FacultyService facultyService;
+
+    @GetMapping ("/all")
+    public ResponseEntity<Collection<Faculty>> getAllFaculty() {
+        return ResponseEntity.ok(facultyService.getAllFaculty());
+    }
 
     @GetMapping("{id}")
     public ResponseEntity<Faculty> getFacultyInfo(@PathVariable long id){

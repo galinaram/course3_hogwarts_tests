@@ -1,4 +1,4 @@
-package hogwarts.schooltest;
+package hogwarts.schooltest.testRestTemplate;
 
 import hogwarts.schooltest.controller.StudentController;
 import hogwarts.schooltest.model.Student;
