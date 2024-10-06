@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hogwarts.schooltest.controller.FacultyController;
 import hogwarts.schooltest.model.Faculty;
+import hogwarts.schooltest.model.Student;
 import hogwarts.schooltest.repository.FacultyRepository;
 import hogwarts.schooltest.repository.StudentRepository;
 import hogwarts.schooltest.service.FacultyService;
@@ -23,7 +24,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest (controllers = FacultyController.class)
 public class FacultyControllerWebMVCTest {
@@ -73,4 +77,59 @@ public class FacultyControllerWebMVCTest {
 
     }
 
+    @Test
+    public void getStudentByIdTest() throws Exception {
+        long id = 1;
+        Faculty faculty = new Faculty();
+        faculty.setId(id);
+        faculty.setName("Гриффиндор");
+        faculty.setColor("red");
+
+        when(facultyRepository.findById(id)).thenReturn(Optional.of(faculty));
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.get("/faculty/{id}", id)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value("Гриффиндор"))
+                .andExpect(jsonPath("$.color").value("red"));
+    }
+
+    @Test
+    public void deleteStudentByIdTest() throws Exception {
+        long id = 1;
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.delete("/faculty/{id}", id)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isNoContent());
+
+        verify(facultyRepository, times(1)).deleteById(id);
+    }
+
+    @Test
+    public void createStudentTest() throws Exception {
+        Faculty faculty = new Faculty();
+        faculty.setId(1L);
+        faculty.setName("Гриффиндор");
+        faculty.setColor("red");
+
+        when(facultyRepository.save(any(Faculty.class))).thenReturn(faculty);
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/faculty")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(new ObjectMapper().writeValueAsString(faculty))
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Гриффиндор"))
+                .andExpect(jsonPath("$.color").value("red"));
+
+        verify(facultyRepository, times(1)).save(any(Faculty.class));
+    }
 }

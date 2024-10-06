@@ -16,8 +16,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import net.minidev.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +40,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StudentController.class)
 public class StudentControllerWebMVCTest {
@@ -58,8 +57,8 @@ public class StudentControllerWebMVCTest {
     @MockBean
     private StudentRepository studentRepository;
 
-//    @MockBean
-//    private AvatarRepository avatarRepository;
+    @MockBean
+    private AvatarService avatarService;
 
     @Test
     public void updateTestMvc() throws Exception {
@@ -74,16 +73,74 @@ public class StudentControllerWebMVCTest {
         newStudent.setAge(17);
         newStudent.setName("Гарри Поттер");
 
-        when(studentRepository.findById(any())).thenReturn(Optional.of(oldStudent));
-        when(studentRepository.save(any())).thenReturn(Optional.of(newStudent));
+        when(studentRepository.findById(id)).thenReturn(Optional.of(oldStudent));
+        when(studentRepository.save(any())).thenReturn(newStudent);
 
         mockMvc.perform(
-                MockMvcRequestBuilders.put("/student/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newStudent))
-        ).andExpect(result -> {
-            MockHttpServletResponse response = result.getResponse();
-            Student responseFaculty = objectMapper.readValue(response.getContentAsString(), Student.class);
-        });
+                        MockMvcRequestBuilders.put("/student/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(newStudent))
+                ).andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value("Гарри Поттер"));
     }
+
+    @Test
+    public void getStudentByIdTest() throws Exception {
+        long id = 1;
+        Student student = new Student();
+        student.setId(id);
+        student.setName("Гарри Поттер");
+        student.setAge(17);
+
+        // Настройка mock-репозитория
+        when(studentRepository.findById(id)).thenReturn(Optional.of(student));
+
+        // Выполнение запроса и проверка результата
+        mockMvc.perform(
+                        MockMvcRequestBuilders.get("/student/{id}", id)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value("Гарри Поттер"))
+                .andExpect(jsonPath("$.age").value(17));
+    }
+
+    @Test
+    public void deleteStudentByIdTest() throws Exception {
+        long id = 1;
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.delete("/student/{id}", id)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isNoContent());
+
+        verify(studentRepository, times(1)).deleteById(id);
+    }
+
+    @Test
+    public void createStudentTest() throws Exception {
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("John Doe");
+        student.setAge(20);
+
+        when(studentRepository.save(any(Student.class))).thenReturn(student);
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/student")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(new ObjectMapper().writeValueAsString(student))
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("John Doe"))
+                .andExpect(jsonPath("$.age").value(20));
+
+        verify(studentRepository, times(1)).save(any(Student.class));
+    }
+
 }
